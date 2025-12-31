@@ -3,307 +3,184 @@
 <head>
 <meta charset="UTF-8">
 <title>IPTV Web Player</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
 <style>
 body {
-  margin: 0;
-  background: #0b0b0b;
-  color: #fff;
+  margin:0;
+  background:#0f0f0f;
   font-family: Arial, sans-serif;
+  color:#fff;
 }
-
 header {
-  padding: 15px 25px;
-  background: #141414;
-  font-size: 22px;
-  font-weight: bold;
+  padding:15px;
+  font-size:22px;
+  font-weight:bold;
 }
-header span { color: #e50914; }
-
-#top {
-  padding: 15px 25px;
-  background: #111;
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
+.controls {
+  padding:15px;
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
 }
-
-#top input[type=text] {
-  flex: 1;
-  min-width: 220px;
-  padding: 10px;
-  font-size: 16px;
-  background: #000;
-  border: 1px solid #333;
-  color: #fff;
+input, textarea, button {
+  padding:10px;
+  border-radius:5px;
+  border:none;
 }
-
-#top button, #top label {
-  padding: 10px 18px;
-  background: #e50914;
-  border: none;
-  color: white;
-  font-size: 15px;
-  cursor: pointer;
+textarea {
+  width:100%;
+  height:120px;
 }
-
-#top input[type=file] { display: none; }
-
-#colarBox {
-  width: 95%;
-  height: 220px;
-  margin: 20px;
-  display: none;
-  background: #000;
-  color: #fff;
-  border: 1px solid #333;
-  padding: 10px;
+button {
+  background:#e50914;
+  color:#fff;
+  cursor:pointer;
 }
-
-#btnColar {
-  margin-left: 20px;
-  display: none;
-  background: #e50914;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  cursor: pointer;
+#channels {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+  gap:15px;
+  padding:15px;
 }
-
-#status {
-  padding: 0 25px;
-  color: #aaa;
+.channel {
+  background:#1c1c1c;
+  padding:10px;
+  border-radius:8px;
+  cursor:pointer;
+  position:relative;
 }
-
-#grid {
-  padding: 25px;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 20px;
+.channel:hover {
+  background:#333;
 }
-
-.canal {
-  background: #1a1a1a;
-  border-radius: 10px;
-  padding: 15px;
-  text-align: center;
-  cursor: pointer;
-  transition: transform 0.2s, background 0.2s;
+.badge {
+  position:absolute;
+  top:5px;
+  right:5px;
+  font-size:11px;
+  padding:2px 6px;
+  border-radius:4px;
 }
-.canal:hover {
-  transform: scale(1.08);
-  background: #222;
-}
+.ok { background:#2ecc71; }
+.no { background:#e74c3c; }
 
-.canal img {
-  width: 100%;
-  height: 120px;
-  object-fit: contain;
-  margin-bottom: 10px;
+#playerModal {
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.9);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:999;
 }
-
-.tag {
-  display: inline-block;
-  margin-top: 8px;
-  padding: 4px 8px;
-  font-size: 12px;
-  border-radius: 6px;
-}
-
-.web {
-  background: #1ed760;
-  color: #000;
-}
-
-.box {
-  background: #e50914;
-  color: #fff;
-}
-
-#player {
-  position: fixed;
-  inset: 0;
-  background: black;
-  display: none;
-  z-index: 999;
-}
-
 video {
-  width: 100%;
-  height: 100%;
+  width:90%;
+  max-width:900px;
 }
-
-#fechar {
-  position: absolute;
-  top: 20px;
-  right: 25px;
-  font-size: 22px;
-  cursor: pointer;
-  z-index: 1000;
+.close {
+  position:absolute;
+  top:20px;
+  right:30px;
+  font-size:28px;
+  cursor:pointer;
 }
 </style>
 </head>
 
 <body>
 
-<header>
-  <span>IPTV</span> Web Player
-</header>
+<header>IPTV Web Player</header>
 
-<div id="top">
-  <input id="m3uurl" placeholder="Cole a URL M3U (opcional)">
-  <button onclick="carregarURL()">Carregar URL</button>
-
-  <label>
-    Arquivo M3U
-    <input type="file" accept=".m3u,.txt" onchange="abrirArquivo(event)">
-  </label>
-
-  <button onclick="mostrarColar()">Colar Lista</button>
+<div class="controls">
+  <input type="file" id="fileInput" accept=".m3u">
+  <button onclick="loadFile()">Arquivo M3U</button>
 </div>
 
-<textarea id="colarBox" placeholder="Cole AQUI o conteúdo COMPLETO da lista M3U"></textarea>
-<button id="btnColar" onclick="carregarColado()">Carregar Lista Colada</button>
+<div class="controls">
+  <textarea id="m3uText" placeholder="Cole a lista M3U completa aqui"></textarea>
+  <button onclick="loadText()">Colar Lista</button>
+</div>
 
-<div id="status"></div>
-<div id="grid"></div>
+<div id="channels"></div>
 
-<div id="player">
-  <div id="fechar" onclick="fechar()">✖</div>
-  <video id="video" controls></video>
+<div id="playerModal">
+  <div class="close" onclick="closePlayer()">✖</div>
+  <video id="video" controls autoplay></video>
 </div>
 
 <script>
-let grid = document.getElementById("grid");
-let video = document.getElementById("video");
-let player = document.getElementById("player");
-let statusTxt = document.getElementById("status");
-let hls;
+let channels = [];
 
-/* URL */
-function carregarURL() {
-  let url = document.getElementById("m3uurl").value;
-  if (!url) return alert("Cole a URL da lista");
+function parseM3U(text) {
+  channels = [];
+  const lines = text.split("\n");
+  let name = "";
 
-  let proxy = "https://api.allorigins.win/raw?url=";
-  fetch(proxy + encodeURIComponent(url))
-    .then(r => r.text())
-    .then(t => parseM3U(t))
-    .catch(() => alert("Não foi possível carregar a lista"));
+  lines.forEach(line => {
+    line = line.trim();
+    if (line.startsWith("#EXTINF")) {
+      name = line.split(",").pop();
+    } else if (line.startsWith("http")) {
+      const isHLS = line.includes(".m3u8");
+      channels.push({ name, url: line, ok: isHLS });
+    }
+  });
+
+  render();
 }
 
-/* Arquivo */
-function abrirArquivo(e) {
-  let file = e.target.files[0];
-  if (!file) return;
+function render() {
+  const box = document.getElementById("channels");
+  box.innerHTML = "";
+  channels.forEach(ch => {
+    const div = document.createElement("div");
+    div.className = "channel";
+    div.innerHTML = `
+      <div class="badge ${ch.ok ? 'ok':'no'}">
+        ${ch.ok ? 'WEB OK':'INCOMPATÍVEL'}
+      </div>
+      ${ch.name || 'Sem nome'}
+    `;
+    if (ch.ok) {
+      div.onclick = () => play(ch.url);
+    }
+    box.appendChild(div);
+  });
+}
 
-  let reader = new FileReader();
-  reader.onload = () => parseM3U(reader.result);
+function play(url) {
+  const video = document.getElementById("video");
+  const modal = document.getElementById("playerModal");
+  modal.style.display = "flex";
+
+  if (Hls.isSupported()) {
+    const hls = new Hls();
+    hls.loadSource(url);
+    hls.attachMedia(video);
+  } else {
+    video.src = url;
+  }
+}
+
+function closePlayer() {
+  const video = document.getElementById("video");
+  video.pause();
+  video.src = "";
+  document.getElementById("playerModal").style.display = "none";
+}
+
+function loadFile() {
+  const file = document.getElementById("fileInput").files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => parseM3U(e.target.result);
   reader.readAsText(file);
 }
 
-/* Colar */
-function mostrarColar() {
-  document.getElementById("colarBox").style.display = "block";
-  document.getElementById("btnColar").style.display = "inline-block";
-}
-
-function carregarColado() {
-  let texto = document.getElementById("colarBox").value.trim();
-  if (!texto.includes("#EXTM3U")) {
-    alert("Lista inválida");
-    return;
-  }
-  parseM3U(texto);
-}
-
-/* PARSER EM LOTES + MARCAÇÃO */
-function parseM3U(text) {
-  grid.innerHTML = "";
-  statusTxt.textContent = "Processando lista...";
-  text = text.replace(/\r/g, "");
-  const linhas = text.split("\n");
-
-  let i = 0;
-  let total = linhas.length;
-  let canais = 0;
-
-  function processarLote() {
-    let limite = 0;
-
-    while (i < total && limite < 200) {
-      if (linhas[i].includes("#EXTINF")) {
-        let nome = linhas[i].split(",").slice(1).join(",").trim() || "Canal";
-        let logo = linhas[i].match(/tvg-logo="(.*?)"/)?.[1];
-        let url = linhas[i + 1]?.trim();
-
-        if (url && url.startsWith("http")) {
-          const webOK = url.includes(".m3u8") || url.includes(".mp4");
-
-          let card = document.createElement("div");
-          card.className = "canal";
-          card.innerHTML = `
-            <img src="${logo || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE1MCIgdmlld0JveD0iMCAwIDMwMCAxNTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSIxNTAiIGZpbGw9IiMyMjIiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZmlsbD0iI2ZmZiIgZm9udC1zaXplPSIyNCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+VFY8L3RleHQ+PC9zdmc+'}">
-            <div>${nome}</div>
-            <div class="tag ${webOK ? 'web' : 'box'}">
-              ${webOK ? 'WEB OK' : 'TV BOX'}
-            </div>
-          `;
-
-          if (webOK) {
-            card.onclick = () => play(url);
-          } else {
-            card.onclick = () => alert("Este canal só funciona em TV Box / apps IPTV");
-          }
-
-          grid.appendChild(card);
-          canais++;
-        }
-      }
-      i++;
-      limite++;
-    }
-
-    statusTxt.textContent = "Canais carregados: " + canais;
-
-    if (i < total) {
-      setTimeout(processarLote, 10);
-    } else {
-      statusTxt.textContent += " ✓";
-    }
-  }
-
-  processarLote();
-}
-
-/* PLAYER */
-function play(url) {
-  player.style.display = "block";
-  video.pause();
-  video.src = "";
-  video.muted = true;
-  video.playsInline = true;
-
-  if (hls) hls.destroy();
-
-  if (Hls.isSupported()) {
-    hls = new Hls();
-    hls.loadSource(url);
-    hls.attachMedia(video);
-    hls.on(Hls.Events.MANIFEST_PARSED, () => {
-      video.play().catch(()=>{});
-    });
-  } else {
-    video.src = url;
-    video.play().catch(()=>{});
-  }
-}
-
-function fechar() {
-  player.style.display = "none";
-  video.pause();
+function loadText() {
+  const text = document.getElementById("m3uText").value;
+  if (text.trim()) parseM3U(text);
 }
 </script>
 
